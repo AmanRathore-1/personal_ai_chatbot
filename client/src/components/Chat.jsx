@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 export default function Chat() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
-  const [typingText, setTypingText] = useState("");
+  const [typingText, setTypingText] = useState(""); 
   const typingIndex = useRef(0);
   const typingInterval = useRef(null);
 
@@ -28,29 +28,29 @@ export default function Chat() {
     }, 20);
   };
 
-  // ---------- SEND MESSAGE ----------
+  // Send message
   async function send() {
     if (!input.trim()) return;
 
+    // Add user message instantly
     setMessages((prev) => [...prev, { from: "user", text: input }]);
 
     const userMessage = input;
     setInput("");
 
     try {
-      // ⭐ IMPORTANT: Use Vite env variable for backend URL
+      // ⭐ Backend URL (Vercel + Render compatible)
       const backendURL = import.meta.env.VITE_BACKEND_URL;
 
       const res = await axios.post(`${backendURL}/api/chat`, {
         message: userMessage,
       });
 
-      const reply = res.data.reply || "I couldn't generate a response.";
-
+      let reply = res.data.reply || "I couldn't generate a response.";
       startTyping(reply);
     } catch (err) {
-      console.error(err);
-      startTyping("Server error. Please check backend.");
+      console.error("CHAT ERROR:", err);
+      startTyping("Server error. Please check backend or network.");
     }
   }
 
@@ -63,6 +63,7 @@ export default function Chat() {
           </div>
         ))}
 
+        {/* typing bubble */}
         {typingText && (
           <div className="msg ai typing">
             {typingText}
