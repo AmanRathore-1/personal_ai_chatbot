@@ -1,3 +1,4 @@
+// client/src/components/Sidebar.jsx
 export default function Sidebar({ view, setView }) {
   return (
     <aside className="sidebar">

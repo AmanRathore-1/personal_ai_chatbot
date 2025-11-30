@@ -1,6 +1,7 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
-import "./Admin.css"; // this will work with the file I give below
+import "./Admin.css";
+
 
 export default function Admin() {
   const [docs, setDocs] = useState([]);
@@ -13,7 +14,7 @@ export default function Admin() {
 
   async function load() {
     try {
-      const res = await axios.get("http://localhost:4000/api/personal-info");
+      const res = await axios.get((import.meta.env.VITE_BACKEND_URL || "http://localhost:4000") + "/api/personal-info");
       setDocs(res.data || []);
     } catch (err) {
       console.error("Load Error:", err);
@@ -27,7 +28,7 @@ export default function Admin() {
     }
 
     try {
-      await axios.post("http://localhost:4000/api/personal-info", {
+      await axios.post((import.meta.env.VITE_BACKEND_URL || "http://localhost:4000") + "/api/personal-info", {
         ...form,
         tags: form.tags ? form.tags.split(",").map(t => t.trim()) : [],
       });
@@ -44,7 +45,7 @@ export default function Admin() {
     if (!window.confirm("Delete this item?")) return;
 
     try {
-      await axios.delete("http://localhost:4000/api/personal-info/" + key);
+      await axios.delete((import.meta.env.VITE_BACKEND_URL || "http://localhost:4000") + "/api/personal-info/" + key);
       load();
     } catch (err) {
       console.error("Delete Error:", err);
@@ -96,9 +97,9 @@ export default function Admin() {
           <div key={d.key} className="admin-card">
             <div>
               <b className="admin-title">{d.title || d.key}</b>
-              <p className="admin-preview">{d.content.slice(0, 120)}...</p>
+              <p className="admin-preview">{(d.content || "").slice(0, 120)}...</p>
               <small className="admin-tags">
-                {d.tags?.join(", ")}
+                {(d.tags || []).join(", ")}
               </small>
             </div>
 

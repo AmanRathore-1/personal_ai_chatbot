@@ -1,10 +1,12 @@
+// client/src/App.jsx
 import { useState } from "react";
 import Admin from "./components/Admin.jsx";
 import Chat from "./components/Chat.jsx";
 import Sidebar from "./components/Sidebar.jsx";
+import "./styles.css";
 
 export default function App() {
-  const [view, setView] = useState("chat"); // chat | admin
+  const [view, setView] = useState("chat"); // "chat" | "admin"
 
   return (
     <div className="app">
@@ -28,7 +30,10 @@ export default function App() {
           </button>
         </div>
 
-        <div className="card" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+        <div
+          className="card"
+          style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}
+        >
           {view === "chat" ? <Chat /> : <Admin />}
         </div>
       </div>

@@ -8,8 +8,18 @@ import { getUserMemories, saveMemory, shouldSaveMemory } from "../utils/memory.j
 dotenv.config();
 const router = express.Router();
 
-// Gemini Flash 2.0
+// Gemini Flash 2.0 (same model you wanted)
 const model = google("gemini-2.0-flash");
+
+// 🔥 Block ALL non-English scripts (Bangla, Hindi, Tamil etc.)
+function forceRoman(text) {
+  return text.replace(/[^A-Za-z0-9 .,!?'"-]/g, "");
+}
+
+// Detect if message is full English
+function isEnglish(text) {
+  return /^[A-Za-z0-9 .,!?'"-]+$/.test(text);
+}
 
 router.post("/", async (req, res) => {
   try {
@@ -24,7 +34,6 @@ router.post("/", async (req, res) => {
     const userMemories = await getUserMemories("default-user");
     const chatMemory = userMemories.map(m => `• ${m.data}`).join("\n");
 
-    // (3) Merge memory
     const memoryText = `
 === Admin Memory ===
 ${adminMemory}
@@ -39,75 +48,74 @@ ${chatMemory}
     else if (message.length > 150) replyStyle = "detailed";
 
     const styleGuide = {
-      short: "Reply in 1–4 fun, human-like lines. Maintain a friendly tone.",
-      medium: "Reply in 3–6 natural lines with humor and personality.",
-      detailed: "Reply detailed but stay human-like and lightly funny.",
+      short: "Reply in 1–3 friendly lines.",
+      medium: "Reply in 3–6 natural lines with little humor.",
+      detailed: "Reply detailed but stay human-like.",
     }[replyStyle];
 
-    // Random vibe phrases (very human touch)
-    const randomExpressions = [
-      "haha 😂",
-      "arre yaar",
-      "bhai sach bolu?",
-      "mat puch yaar 😆",
-      "badiya badiya",
-      "lol",
-      "scene kya hai bhai?"
-    ];
-    const vibe = randomExpressions[Math.floor(Math.random() * randomExpressions.length)];
+    // Detect user language
+    const englishMode = isEnglish(message);
 
-    // Small filler (makes AI feel alive)
-    const smallTalk = [
-      "acha acha...",
-      "hmm theek...",
-      "samajh gaya bhai...",
-      "ohho yeh baat hai...",
-      "sahi pakde ho..."
-    ];
-    const filler = smallTalk[Math.floor(Math.random() * smallTalk.length)];
+    // 🔥 ENGLISH ONLY PROMPT
+    const englishPrompt = `
+You are Aman's personal AI assistant.
 
-    // FINAL PROMPT — Human Mode Activated
-    const prompt = `
-You are Aman's personal AI assistant, but act like his real-life close friend.
+LANGUAGE RULES:
+- User message is in ENGLISH → reply ONLY in English.
+- NO Hinglish.
+- NO Hindi words.
+- NO scripts like: Hindi, Bangla, Tamil.
+- ONLY English alphabet allowed (A–Z).
 
-Your tone must be:
-- friendly
-- casual
-- natural
-- slightly funny
-- emotional when needed
-- never robotic
-- never overly formal
-- never give long intros
-- never repeat skills or future tasks
-- never mention "future fields", "task management", "meeting scheduling", or "next steps"
-- never repeat memory unless user asks for it
+Tone:
+- friendly, natural, short
+- emoji max 1
 
-Use Hinglish (Hindi + English mix).
-Use emojis sometimes (1–3 max).
-Speak like a real Indian college friend.
-
-${styleGuide}
-
-Here is memory (use only when needed):
+Memory:
 ${memoryText}
 
-Filler: ${filler}
-Feeling: ${vibe}
+User: "${message}"
+
+Reply in clean English only.
+`;
+
+    // 🔥 HINGLISH ONLY PROMPT (Roman letters only)
+    const hinglishPrompt = `
+You are Aman's personal AI assistant and his close friend.
+
+LANGUAGE RULES:
+- User message is Hinglish → reply in Hinglish.
+- Hinglish MUST be written ONLY in English letters.
+- NEVER use scripts: Devanagari, Bangla, Tamil, Telugu, Marathi.
+- ALWAYS reply in ROMAN English only.
+- If any Hindi word comes → write it in English letters (kya, kaise, chal raha).
+
+Tone:
+- friendly, casual, natural
+- emoji max 1
+
+Memory:
+${memoryText}
 
 User: "${message}"
-Reply in a human, friendly way.
+
+Reply in Hinglish using English letters only.
 `;
+
+    const prompt = englishMode ? englishPrompt : hinglishPrompt;
 
     // AI CALL
     const result = await generateText({ model, prompt });
+
+    // 🔥 CLEAN OUTPUT (remove any non-English script Gemini tries to add)
+    const cleanReply = forceRoman(result.text);
 
     // Save Memory
     if (shouldSaveMemory(message)) {
       await saveMemory("default-user", message);
     }
 
-    res.json({ reply: result.text });
+    res.json({ reply: cleanReply });
 
   } catch (err) {
     console.error("CHAT ROUTE ERROR:", err.message);
