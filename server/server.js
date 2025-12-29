@@ -8,7 +8,6 @@ import personalInfoRoutes from "./routes/personalInfo.js";
 dotenv.config();
 const app = express();
 
-// Better CORS for production + local
 app.use(
   cors({
     origin: "*",
@@ -28,7 +27,6 @@ mongoose
 app.use("/api/personal-info", personalInfoRoutes);
 app.use("/api/chat", chatRoutes);
 
-// IMPORTANT: Render uses dynamic port
+// Start server
 const PORT = process.env.PORT || 4000;
-
 app.listen(PORT, () => console.log("Server running on port", PORT));
